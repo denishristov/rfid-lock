@@ -1,0 +1,21 @@
+{
+  "name": "rfid-lock",
+  "version": "1.0.0",
+  "description": "RFID locking for a computer.",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node-dev ./index.ts --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@serialport/parser-readline": "^2.0.2",
+    "serialport": "^7.1.5"
+  },
+  "devDependencies": {
+    "@types/serialport": "^7.0.2",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "typescript": "^3.4.5"
+  }
+}
