@@ -1,6 +1,7 @@
 import SerialPort from 'serialport'
 import { EventEmitter } from 'events'
-import { IDataResponse, IAllData } from './interfaces';
+import { IDataResponse, IAllData } from './interfaces'
+import { ipcMain } from 'electron';
 const Readline = require('@serialport/parser-readline')
 
 const path = '/dev/cu.usbserial-1410'

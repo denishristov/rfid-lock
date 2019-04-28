@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'path'
 import API from './api'
 
@@ -6,7 +6,10 @@ let mainWindow: BrowserWindow
 
 const api = new API()
 
-api.getAll().then(console.log)
+ipcMain.on('get', async (event: any) => {
+	const data = await api.getAll()
+	event.sender.send('get', data)
+})
 
 function createWindow() {	
 	mainWindow = new BrowserWindow({
@@ -36,4 +39,3 @@ app.on('activate', () => {
 		createWindow()
 	}
 })
-

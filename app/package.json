@@ -37,10 +37,11 @@
     "@types/serialport": "^7.0.2"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^2.0.2",
     "@types/react-dom": "^16.8.4",
+    "nes.css": "^2.1.1",
     "react": "16.8.1",
     "react-dom": "16.8.1",
-    "@serialport/parser-readline": "^2.0.2",
     "serialport": "^7.1.5"
   }
 }
