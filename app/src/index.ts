@@ -15,11 +15,21 @@ function createWindow() {
 	mainWindow = new BrowserWindow({
 		height: 600,
 		width: 800,
+		frame: false,
+		titleBarStyle: 'hidden'
 	})
 
 	mainWindow.loadFile(join(__dirname, '../public/index.html'))
 
-	// mainWindow.webContents.openDevTools()
+	mainWindow.webContents.on('did-finish-load', () => {
+		const types = ['scan']
+
+		types.forEach((type) => {
+			api.on(type, (data) => {
+				mainWindow.webContents.send(type, data)
+			})
+		})
+	})
 
 	mainWindow.on('closed', () => {
 		mainWindow = null

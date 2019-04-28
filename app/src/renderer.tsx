@@ -1,27 +1,40 @@
 import { useState, createElement, Fragment } from 'react'
 import ReactDOM from 'react-dom'
 import { useController } from './util'
-import { IAllData } from './interfaces'
+import { IAllData, IScan } from './interfaces'
 
 function Counter() {
 	const [data, setData] = useState<IAllData>({ history: [], ids: [] })
+
 	useController('get', void 0, setData)
+	useController<IScan>('scan', void 0, scan => {
+		setData(data => ({
+			...data,
+			history: [scan, ...data.history]
+		}))
+	})
 
 	return (
 		<Fragment>
-			<span>
-				{data.history.map(scan => (
-					<div>
-						<h1>{scan.uuid}</h1>
-						<h2>{scan.isMatching}</h2>
+			<div className="nes-container with-title is-rounded">
+				<p className="title">History</p>
+				<div className='entries'>
+					{data.history.map(scan => (
+						<div className={`nes-text is-${scan.isMatching ? 'success' : 'error'}`}>
+							<p>{scan.uuid}</p>
+						</div>
+					))}
+				</div>
+			</div>
+			<div className="nes-container with-title is-rounded">
+				<p className="title">Registered UUIDs</p>
+				{data.ids.map(uuid => (
+					<div className='uuid' key={uuid}>
+						<p>{uuid}</p>
 					</div>
 				))}
-			</span>
-			<span>
-				{data.ids.map(uuid => (
-					<h1 key={uuid}>{uuid}</h1>
-				))}
-			</span>
+				<button type="button" className="nes-btn is-success">Add new</button>
+			</div>
 		</Fragment>
 	)
 }	

@@ -3,13 +3,29 @@ html, body, pre, code, kbd, samp {
 }
 
 p {
-  font-size: 2rem;
+  /* font-size: 2rem; */
 }
 
 #root {
   display: flex;
-  flex-flow: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: space-around;
+  align-items: baseline;
   height: 100vh;
+  padding: 64px;
+}
+
+.nes-container {
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+}
+
+.nes-container > .entries {
+  max-height: 100%;
+  overflow-y: scroll;
+  margin-right: -28px;
+}
+
+.nes-container + .nes-container {
+  margin-left: 64px !important;
 }
