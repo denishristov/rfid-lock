@@ -1,17 +1,38 @@
-import { useState, createElement, Fragment } from 'react'
+import { useState, createElement, Fragment, useRef } from 'react'
 import ReactDOM from 'react-dom'
-import { useController } from './util'
-import { IAllData, IScan } from './interfaces'
+import { useController, sendToController } from './util'
+import { IAllData, IScan, IIdentity } from './interfaces'
+import IDModal from './IDModal'
 
-function Counter() {
-	const [data, setData] = useState<IAllData>({ history: [], ids: [] })
+function App() {
+	const [history, setHistory] = useState<IScan[]>([])
+	const [ids, setIds] = useState<IIdentity[]>([])
+	const [uuid, setUuid] = useState('')
 
-	useController('get', void 0, setData)
-	useController<IScan>('scan', void 0, scan => {
-		setData(data => ({
-			...data,
-			history: [scan, ...data.history]
-		}))
+	const ref = useRef<HTMLDialogElement>()
+
+	function register(id: IIdentity) {
+		sendToController<IScan>('register', id)
+		setIds(ids => [id, ...ids])
+	}
+
+	async function openModal() {
+		ref.current.showModal()
+		const { uuid } = await sendToController<IScan>('toggleRegister')
+		setUuid(uuid)
+	}
+
+	useController<IAllData>('get', ({ history, ids }) => {
+		setIds(ids)
+		setHistory(history)
+	})
+
+	useController<IScan>('scan', scan => {
+		if (ref.current.open) {
+			setUuid(scan.uuid)
+		} else {
+			setHistory(history => [scan, ...history])
+		}
 	})
 
 	return (
@@ -19,7 +40,7 @@ function Counter() {
 			<div className="nes-container with-title is-rounded">
 				<p className="title">History</p>
 				<div className='entries'>
-					{data.history.map(scan => (
+					{history.map(scan => (
 						<div className={`nes-text is-${scan.isMatching ? 'success' : 'error'}`}>
 							<p>{scan.uuid}</p>
 						</div>
@@ -27,16 +48,22 @@ function Counter() {
 				</div>
 			</div>
 			<div className="nes-container with-title is-rounded">
-				<p className="title">Registered UUIDs</p>
-				{data.ids.map(uuid => (
+				<p className="title">Identities</p>
+				{ids.map(({ uuid, name, image, timestamp }) => (
 					<div className='uuid' key={uuid}>
+						<i className={`nes-${image}`} />
+						<p>{name}</p>
 						<p>{uuid}</p>
+						<p>{timestamp}</p>
 					</div>
 				))}
-				<button type="button" className="nes-btn is-success">Add new</button>
+				<button onClick={openModal} className="nes-btn is-success">
+					Add
+				</button>
+				<IDModal ref={ref} uuid={uuid} create={register} />
 			</div>
 		</Fragment>
 	)
 }	
 
-ReactDOM.render(<Counter />, document.getElementById('root'))
+ReactDOM.render(<App />, document.getElementById('root'))

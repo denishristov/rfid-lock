@@ -42,6 +42,7 @@
     "nes.css": "^2.1.1",
     "react": "16.8.1",
     "react-dom": "16.8.1",
-    "serialport": "^7.1.5"
+    "serialport": "^7.1.5",
+    "timeago.js": "^4.0.0-beta.2"
   }
 }

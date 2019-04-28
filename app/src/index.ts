@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'path'
 import API from './api'
+import { IIdentity } from './interfaces';
 
 let mainWindow: BrowserWindow
 
@@ -11,10 +12,20 @@ ipcMain.on('get', async (event: any) => {
 	event.sender.send('get', data)
 })
 
+ipcMain.on('toggleRegister', async (event: any) => {
+	const data = await api.toggleRegister()
+	event.sender.send('toggleRegister', data)
+})
+
+ipcMain.on('register', (_: void, id: IIdentity) => {
+	console.log(id)
+	api.register(id)
+})
+
 function createWindow() {	
 	mainWindow = new BrowserWindow({
 		height: 600,
-		width: 800,
+		width: 1000,
 		frame: false,
 		titleBarStyle: 'hidden'
 	})

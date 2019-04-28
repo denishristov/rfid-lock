@@ -1,7 +1,7 @@
 import SerialPort from 'serialport'
 import { EventEmitter } from 'events'
-import { IDataResponse, IAllData } from './interfaces'
-import { ipcMain } from 'electron';
+import { IDataResponse, IAllData, IScan, IIdentity } from './interfaces'
+
 const Readline = require('@serialport/parser-readline')
 
 const path = '/dev/cu.usbserial-1410'
@@ -16,6 +16,7 @@ export default class API extends EventEmitter {
 
     this.port.pipe(this.parser)
     this.parser.on('data', (line: string) => {
+      console.log(line)
       const { type, ...payload } = JSON.parse(line)
 
       this.emit(type, payload)
@@ -29,6 +30,14 @@ export default class API extends EventEmitter {
       ids,
       history: history.map(scan => JSON.parse(scan))
     }
+  }
+
+  toggleRegister(): Promise<IScan> {
+    return this.fetch('toggleRegister')
+  }
+
+  register(id: IIdentity) {
+    return this.fetch('register', id)
   }
 
   private fetch<T>(type: string, data?: {}): Promise<T> {
