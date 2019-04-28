@@ -11,21 +11,77 @@ p {
   justify-content: space-around;
   align-items: baseline;
   height: 100vh;
-  padding: 64px;
+  padding: 32px;
+  flex-flow: row wrap;
 }
 
 .nes-container {
+  height: calc(100% - 64px);
+  min-width: 230px;
+  margin: 32px !important;
   flex-grow: 1;
-  height: 100%;
-  width: 100%;
 }
 
 .nes-container > .entries {
-  max-height: 100%;
+  height: calc(100% - 44px - 24px - 16px);
   overflow-y: scroll;
   margin-right: -28px;
 }
 
-.nes-container + .nes-container {
-  margin-left: 64px !important;
+.nes-container > button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.dialog-menu {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.uuid {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+section {
+  margin-bottom: 32px;
+  display: flex !important;
+  align-items: center;
+  flex-flow: row wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.nes-field + label {
+  margin-top: 32px;
+}
+
+.uuid > *:not(:first-child) {
+  margin-left: 16px;
+}
+
+.uuid > span {
+  display: inline-flex;
+  flex-flow: column;
+}
+
+button + button {
+  margin-left: 16px !important;
+}
+
+section > i {
+  margin: 0 16px;
+}
+
+form {
+  max-width: 600px;
+}
+
+section > i:hover {
+  background-color: whitesmoke;
+}
+
+section > i.selected {
+  background-color: lightgray;
 }

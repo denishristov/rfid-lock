@@ -18,13 +18,12 @@ ipcMain.on('toggleRegister', async (event: any) => {
 })
 
 ipcMain.on('register', (_: void, id: IIdentity) => {
-	console.log(id)
 	api.register(id)
 })
 
 function createWindow() {	
 	mainWindow = new BrowserWindow({
-		height: 600,
+		height: 800,
 		width: 1000,
 		frame: false,
 		titleBarStyle: 'hidden'

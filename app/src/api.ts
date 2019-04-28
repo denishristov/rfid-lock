@@ -16,7 +16,6 @@ export default class API extends EventEmitter {
 
     this.port.pipe(this.parser)
     this.parser.on('data', (line: string) => {
-      console.log(line)
       const { type, ...payload } = JSON.parse(line)
 
       this.emit(type, payload)
