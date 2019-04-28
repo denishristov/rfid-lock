@@ -23,14 +23,17 @@ p {
 }
 
 .nes-container > .entries {
-  height: calc(100% - 44px - 24px - 16px);
+  height: 100%;
   overflow-y: scroll;
   margin-right: -28px;
 }
 
+.nes-container + .nes-container > .entries {
+  height: calc(100% - 44px - 24px);
+}
+
 .nes-container > button {
   width: 100%;
-  margin-top: 16px;
 }
 
 .dialog-menu {
@@ -42,6 +45,7 @@ p {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+  cursor: pointer;
 }
 
 section {
@@ -57,13 +61,18 @@ section {
   margin-top: 32px;
 }
 
-.uuid > *:not(:first-child) {
-  margin-left: 16px;
+.uuid:hover {
+  background-color: whitesmoke;
 }
 
 .uuid > span {
+  margin-left: 32px;
   display: inline-flex;
   flex-flow: column;
+}
+
+.uuid > i {
+  min-width: 126px;
 }
 
 button + button {

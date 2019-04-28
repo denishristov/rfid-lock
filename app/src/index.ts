@@ -1,25 +1,27 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import API from './api'
-import { IIdentity } from './interfaces';
+import { IIdentity } from './interfaces'
 
 let mainWindow: BrowserWindow
 
 const api = new API()
 
-ipcMain.on('get', async (event: any) => {
-	const data = await api.getAll()
-	event.sender.send('get', data)
-})
-
-ipcMain.on('toggleRegister', async (event: any) => {
-	const data = await api.toggleRegister()
-	event.sender.send('toggleRegister', data)
-})
-
-ipcMain.on('register', (_: void, id: IIdentity) => {
-	api.register(id)
-})
+ipcMain
+	.on('get', async (event: any) => {
+		const data = await api.getAll()
+		event.sender.send('get', data)
+	})
+	.on('toggleRegister', async (event: any) => {
+		const data = await api.toggleRegister()
+		event.sender.send('toggleRegister', data)
+	})
+	.on('register', (_: void, id: IIdentity) => {
+		api.register(id)
+	})
+	.on('deleteUuid', (_: void, uuid: string) => {
+		api.deleteUuid(uuid)
+	})
 
 function createWindow() {	
 	mainWindow = new BrowserWindow({
@@ -32,9 +34,7 @@ function createWindow() {
 	mainWindow.loadFile(join(__dirname, '../public/index.html'))
 
 	mainWindow.webContents.on('did-finish-load', () => {
-		const types = ['scan']
-
-		types.forEach((type) => {
+		['scan'].forEach((type) => {
 			api.on(type, (data) => {
 				mainWindow.webContents.send(type, data)
 			})

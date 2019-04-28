@@ -39,6 +39,10 @@ export default class API extends EventEmitter {
     return this.fetch('register', id)
   }
 
+  deleteUuid(uuid: string) {
+    return this.fetch('deleteUuid', { uuid })
+  }
+
   private fetch<T>(type: string, data?: {}): Promise<T> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(reject, 2000)

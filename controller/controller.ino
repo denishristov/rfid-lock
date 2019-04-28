@@ -61,6 +61,14 @@ void toggle_register_mode(const JSON& input, JSON& output)
   is_register_mode = !is_register_mode;
 }
 
+void delete_uuid(const JSON& input, JSON& output)
+{
+  const char* uuid = input["uuid"];
+
+  const auto& it = ids.find(uuid);
+  ids.erase(it);
+}
+
 void register_id(const JSON& input, JSON& output)
 {
   const char* name = strdup(input["name"]);
@@ -103,6 +111,18 @@ void read_RFID() {
 
     serializeJson(output, Serial);
     Serial.println();
+
+    tone(BUZZER_PIN, 4000);
+    delay(100);
+    noTone(BUZZER_PIN);
+    delay(100);
+    tone(BUZZER_PIN, 4000);
+    delay(100);
+    noTone(BUZZER_PIN);
+    delay(100);
+    tone(BUZZER_PIN, 4000);
+    delay(100);
+    noTone(BUZZER_PIN);
   }
   else
   {
@@ -209,6 +229,7 @@ void setup()
   operations["get"] = get_all;
   operations["toggleRegister"] = toggle_register_mode;
   operations["register"] = register_id;
+  operations["deleteUuid"] = delete_uuid;
   
   runner.init();
 
