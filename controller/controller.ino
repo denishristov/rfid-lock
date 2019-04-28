@@ -8,11 +8,14 @@
 #include <TaskScheduler.h>
 #include <ArduinoJson.h>
 
-typedef void(*handler)(const DynamicJsonDocument&, DynamicJsonDocument&);
+typedef DynamicJsonDocument JSON;
+typedef void(*handler)(const JSON&, JSON&);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
+
 std::unordered_set<std::string> ids;
 std::unordered_map<std::string, handler> operations;
+std::deque<std::string> history;
 
 void read_RFID() {
   if (!mfrc522.PICC_IsNewCardPresent()) 
@@ -25,29 +28,43 @@ void read_RFID() {
     return;
   }
 
-  Serial.print("UID tag: ");
-  std::string content = "";
+  std::string uuid_buffer;
+  uuid_buffer.reserve(16);
   
   for (byte i = 0; i < mfrc522.uid.size; i++) 
   {
-    content.append(mfrc522.uid.uidByte[i] < 0x10 ? "-0" : "-");
-    content.append(String(mfrc522.uid.uidByte[i], HEX).c_str());
+    uuid_buffer.append(mfrc522.uid.uidByte[i] < 0x10 ? "-0" : "-");
+    uuid_buffer.append(String(mfrc522.uid.uidByte[i], HEX).c_str());
+  }
+
+  const char* uuid = uuid_buffer.substr(1).c_str();
+  bool is_matching = ids.find(uuid_buffer.substr(1)) != ids.end();
+  
+  JSON output(256);
+  
+  output["type"] = "scan";
+  output["isMatching"] = is_matching;
+  output["uuid"] = uuid;
+
+  char output_buffer[256];
+  serializeJson(output, output_buffer);
+  
+  if (history.size() > 255)
+  {
+    history.pop_back();
   }
   
-  Serial.println(content.substr(1).c_str());
-  Serial.print("Message: ");
+  history.push_front(output_buffer);
+  Serial.println(output_buffer);
   
-  if (ids.find(content.substr(1)) != ids.end())
+  if (is_matching)
   {
-    Serial.println("Authorized access");
-    Serial.println();
     tone(BUZZER_PIN, 4000);
     delay(300);
     noTone(BUZZER_PIN);
   } 
   else 
   {
-    Serial.println("Access denied");
     tone(BUZZER_PIN, 500);
     delay(100);
     noTone(BUZZER_PIN);
@@ -63,8 +80,7 @@ void serial_communication() {
   {
     String payload = Serial.readString().c_str();
     
-    DynamicJsonDocument input(256); 
-    DynamicJsonDocument output(256);
+    JSON input(256); 
 
     if (deserializeJson(input, payload) != DeserializationError::Ok) 
     {
@@ -72,7 +88,11 @@ void serial_communication() {
       return;
     }
 
+    JSON output(256);
+
     const char* type = input["type"];
+    
+    output["type"] = type;
     operations[type](input, output);
     
     serializeJson(output, Serial);
@@ -80,20 +100,27 @@ void serial_communication() {
   }
 }
 
-void get_all_ids(const DynamicJsonDocument& input, DynamicJsonDocument& output)
+void get_all(const JSON& input, JSON& output)
 {
-  JsonArray data = output.createNestedArray("ids");
+  JsonArray data_ids = output.createNestedArray("ids");
       
   for (const auto& id: ids) 
   {
-    data.add(id.c_str());
+    data_ids.add(id.c_str());
+  }
+
+  JsonArray data_history = output.createNestedArray("history");
+      
+  for (const auto& scan: history) 
+  {
+    data_history.add(scan.c_str());
   }
 }
  
 Scheduler runner;
 
 Task RFID_task(100, TASK_FOREVER, &read_RFID);
-Task print_task(100, TASK_FOREVER, &serial_communication);
+Task communication_task(100, TASK_FOREVER, &serial_communication);
  
 void setup() 
 {
@@ -105,15 +132,15 @@ void setup()
 
   ids.insert("e4-10-6a-1f");
 
-  operations["get"] = get_all_ids;
-
+  operations["get"] = get_all;
+  
   runner.init();
 
   runner.addTask(RFID_task);
-  runner.addTask(print_task);
+  runner.addTask(communication_task);
 
   RFID_task.enable();
-  print_task.enable();
+  communication_task.enable();
 }
 
 void loop() 
