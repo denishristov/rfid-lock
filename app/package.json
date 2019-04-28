@@ -1,0 +1,46 @@
+{
+  "name": "RFID-lock",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "license": "ISC",
+  "private": true,
+  "build": {
+    "files": [
+      "dist",
+      "public"
+    ],
+    "asar": true,
+    "appId": "test-electron",
+    "productName": "RFID Inspect",
+    "directories": {
+      "output": "build"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ]
+    }
+  },
+  "scripts": {
+    "dist": "npm run build && build",
+    "build": "rm -rf dist && tsc",
+    "watch": "rm -rf dist && tsc -w",
+    "lint": "tslint -c tslint.json",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@types/react": "^16.8.2",
+    "electron": "^4.0.4",
+    "electron-builder": "^20.38.5",
+    "tslint": "^5.12.0",
+    "typescript": "^3.4.5",
+    "@types/serialport": "^7.0.2"
+  },
+  "dependencies": {
+    "@types/react-dom": "^16.8.4",
+    "react": "16.8.1",
+    "react-dom": "16.8.1",
+    "@serialport/parser-readline": "^2.0.2",
+    "serialport": "^7.1.5"
+  }
+}

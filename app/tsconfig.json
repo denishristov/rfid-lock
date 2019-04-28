@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"noImplicitAny": true,
+		"sourceMap": true,
+		"jsx": "react",
+		"jsxFactory": "createElement",
+		"outDir": "dist",
+		"baseUrl": ".",
+		"resolveJsonModule": false,
+		"paths": {
+			"*": ["node_modules/*"]
+		},
+		"esModuleInterop": true
+	},
+	"include": [
+		"src/**/*",
+	]
+}
