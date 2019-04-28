@@ -6,9 +6,13 @@
 #include <MFRC522.h>
 #include <bits/stdc++.h> 
 #include <TaskScheduler.h>
+#include <ArduinoJson.h>
+
+typedef void(*handler)(const DynamicJsonDocument&, DynamicJsonDocument&);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
-std::unordered_set<std::string> ids; 
+std::unordered_set<std::string> ids;
+std::unordered_map<std::string, handler> operations;
 
 void read_RFID() {
   if (!mfrc522.PICC_IsNewCardPresent()) 
@@ -33,7 +37,6 @@ void read_RFID() {
   Serial.println(content.substr(1).c_str());
   Serial.print("Message: ");
   
-  
   if (ids.find(content.substr(1)) != ids.end())
   {
     Serial.println("Authorized access");
@@ -55,13 +58,42 @@ void read_RFID() {
   }
 }
 
-void print_stuff() {
-  Serial.println("hello");
+void serial_communication() {
+  if (Serial.available())
+  {
+    String payload = Serial.readString().c_str();
+    
+    DynamicJsonDocument input(256); 
+    DynamicJsonDocument output(256);
+
+    if (deserializeJson(input, payload) != DeserializationError::Ok) 
+    {
+      Serial.println("JSON parsing failed");
+      return;
+    }
+
+    const char* type = input["type"];
+    operations[type](input, output);
+    
+    serializeJson(output, Serial);
+    Serial.println();
+  }
+}
+
+void get_all_ids(const DynamicJsonDocument& input, DynamicJsonDocument& output)
+{
+  JsonArray data = output.createNestedArray("ids");
+      
+  for (const auto& id: ids) 
+  {
+    data.add(id.c_str());
+  }
 }
  
 Scheduler runner;
+
 Task RFID_task(100, TASK_FOREVER, &read_RFID);
-Task print_task(100, TASK_FOREVER, &print_stuff);
+Task print_task(100, TASK_FOREVER, &serial_communication);
  
 void setup() 
 {
@@ -70,9 +102,13 @@ void setup()
   mfrc522.PCD_Init();
   
   pinMode(BUZZER_PIN, OUTPUT);
-  ids.insert(std::string("e4-10-6a-1f"));
+
+  ids.insert("e4-10-6a-1f");
+
+  operations["get"] = get_all_ids;
 
   runner.init();
+
   runner.addTask(RFID_task);
   runner.addTask(print_task);
 
