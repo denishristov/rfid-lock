@@ -1,2 +1,2 @@
-# rfid-lock
-An RFID locking system.
+# RFID-lock
+A RFID locking system.
