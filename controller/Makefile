@@ -1,0 +1,2 @@
+$ make upload
+/home/rick/arduino-0018/hardware/tools/avrdude -V -F -C /home/rick/arduino-0018/hardware/tools/avrdude.conf -p atmega328p -P /dev/ttyUSB* -c stk500v1 -b 57600 -U flash:w:applet/binary_clock2.hex

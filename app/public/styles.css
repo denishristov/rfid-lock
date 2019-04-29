@@ -94,3 +94,8 @@ section > i:hover {
 section > i.selected {
   background-color: lightgray;
 }
+
+.col {
+  display: flex;
+  flex-direction: column;
+}

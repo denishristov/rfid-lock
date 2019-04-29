@@ -46,7 +46,9 @@ function createWindow() {
 	})
 }
 
-app.on('ready', createWindow)
+const sync = api.syncTime()
+
+app.on('ready', () => sync.then(createWindow))
 
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') {

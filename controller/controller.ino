@@ -2,16 +2,67 @@
 #define SS_PIN D2
 #define RST_PIN D1
 
+#define HISTORY_FILE "history.json"
+#define IDS_FILE "ids.json"
+
+#define ARDUINOJSON_USE_DOUBLE 1
+
 #include <SPI.h>
 #include <MFRC522.h>
 #include <bits/stdc++.h> 
 #include <TaskScheduler.h>
 #include <ArduinoJson.h>
+#include <FS.h>
 
 typedef DynamicJsonDocument JSON;
 typedef void(*handler)(const JSON&, JSON&);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+double sync = 0;
+
+void saveFile(const char* path, const JSON& json)
+{          
+  File file = SPIFFS.open(path, "w");
+//  json.printTo(historyFile);
+  serializeJson(json, file);
+  
+  file.close();  
+}
+
+void loadFile(const char* path)
+{
+  File file = SPIFFS.open(path, "r");
+
+  if (!file)
+  {
+    Serial.println(String(path) + " does not exist");
+  } 
+  else
+  {
+    size_t size = file.size();
+    
+    if (size) 
+    {
+      char* buffer = new char(size);
+      // free up this bitch
+
+      file.readBytes(buffer, size);
+      Serial.println(buffer);
+//      if (!root.success()) {
+//        Serial.println(String(path) + " is not valid JSON file");
+//      } else {
+//        root.printTo(Serial);  
+//      }
+    } 
+    else 
+    {
+      Serial.println(String(path) + " is empty");
+    }
+
+    file.close();
+  }
+}
 
 class Identity {
   const char* _name;
@@ -21,17 +72,8 @@ class Identity {
 
 public:
 
-  Identity(
-    const char* name,
-    const char* image,
-    const char* uuid,
-    const char* timestamp
-  ): 
-    _name(name),
-    _image(image),
-    _uuid(uuid),
-    _timestamp(timestamp)
-  {}
+  Identity(const char* name, const char* image, const char* uuid, const char* timestamp): 
+    _name(name), _image(image), _uuid(uuid), _timestamp(timestamp) {}
 
   const char* get_name() {
     return _name;
@@ -55,6 +97,18 @@ std::unordered_map<std::string, handler> operations;
 std::deque<std::string> history;
 
 bool is_register_mode = false;
+
+void sync_time(const JSON& input, JSON& output)
+{
+  double milliseconds = input["milliseconds"];
+
+  sync = milliseconds - millis();
+}
+
+double get_milliseconds()
+{
+  return sync + millis();
+}
 
 void toggle_register_mode(const JSON& input, JSON& output)
 {
@@ -131,6 +185,7 @@ void read_RFID() {
     JSON output(256);
 
     output["uuid"] = uuid;
+    output["timestamp"] = get_milliseconds();
     output["type"] = "scan";
     output["isMatching"] = is_matching;
 
@@ -219,6 +274,7 @@ Task communication_task(100, TASK_FOREVER, &serial_communication);
 void setup() 
 {
   Serial.begin(115200);
+  SPIFFS.begin();
   SPI.begin();
   mfrc522.PCD_Init();
   
@@ -230,6 +286,7 @@ void setup()
   operations["toggleRegister"] = toggle_register_mode;
   operations["register"] = register_id;
   operations["deleteUuid"] = delete_uuid;
+  operations["syncTime"] = sync_time;
   
   runner.init();
 

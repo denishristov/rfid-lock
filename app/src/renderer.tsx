@@ -63,14 +63,17 @@ function App() {
 		}
 	})
 
+	console.log(history.map(x => new Date(x.timestamp)))
+
 	return (
 		<Fragment>
 			<div className="nes-container with-title is-rounded">
 				<p className="title">History</p>
 				<div className='entries'>
 					{history.map(scan => (
-						<div className={`nes-text is-${scan.isMatching ? 'success' : 'error'}`}>
-							<p>{scan.uuid}</p>
+						<div className='col' key={scan.timestamp}>
+							<p className={`nes-text is-${scan.isMatching ? 'success' : 'error'}`}>{scan.uuid}</p>
+							<p className='nes-text is-disabled'>{format(new Date(scan.timestamp))}</p>
 						</div>
 					))}
 				</div>
@@ -93,14 +96,14 @@ function App() {
 					Add
 				</button>
 				<IDModal
-					key={modalKey}
+					key={'c' + modalKey}
 					ref={ref} 
 					uuid={uuid} 
 					create={register} 
 					close={closeModal} 
 				/>
 				<DeleteModal
-					key={modalKey}
+					key={'d' + modalKey}
 					ref={deleteModalRef}
 					name={deleting.name}
 					uuid={deleting.uuid}

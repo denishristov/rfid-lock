@@ -6,6 +6,7 @@ export interface IDataResponse {
 export interface IScan {
   uuid: string
   isMatching: boolean
+  timestamp: number
 }
 
 export interface IIdentity {

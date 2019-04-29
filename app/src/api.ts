@@ -4,21 +4,33 @@ import { IDataResponse, IAllData, IScan, IIdentity } from './interfaces'
 
 const Readline = require('@serialport/parser-readline')
 
-const path = '/dev/cu.usbserial-1410'
 const baudRate = 115200
 
+async function findPortPath() {
+  const ports = await SerialPort.list()
+
+  return ports.find(port => port.comName.includes('usbserial')).comName
+}
+
 export default class API extends EventEmitter {
-  private port = new SerialPort(path, { baudRate })
+  private port = findPortPath().then(path => new SerialPort(path, { baudRate }))
   private parser = new Readline()
 
   constructor() {
     super()
 
-    this.port.pipe(this.parser)
-    this.parser.on('data', (line: string) => {
-      const { type, ...payload } = JSON.parse(line)
+    this.port.then(port => {
+      port.pipe(this.parser)
 
-      this.emit(type, payload)
+      this.parser.on('data', (line: string) => {
+        try {
+          const { type, ...payload } = JSON.parse(line)
+
+          this.emit(type, payload)
+        } catch (error) {
+          console.warn(line)
+        }
+      })
     })
   }
 
@@ -43,11 +55,17 @@ export default class API extends EventEmitter {
     return this.fetch('deleteUuid', { uuid })
   }
 
+  syncTime() {
+    return this.fetch('syncTime', { milliseconds: +new Date() })
+  }
+
   private fetch<T>(type: string, data?: {}): Promise<T> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const timeout = setTimeout(reject, 2000)
 
-      this.port.write(JSON.stringify({ type, ...data }))
+      const port = await this.port
+
+      port.write(JSON.stringify({ type, ...data }))
       this.once(type, data => {
         clearTimeout(timeout)
         resolve(data)
