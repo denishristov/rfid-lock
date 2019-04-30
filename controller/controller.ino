@@ -35,7 +35,7 @@ std::vector<std::string> split(const char* s, char delim)
 
 void appendToFile(const char* path, const char* line)
 {          
-  File file = SPIFFS.open(path, "w");
+  File file = SPIFFS.open(path, "a");
 
   if (!file)
   {
@@ -43,7 +43,7 @@ void appendToFile(const char* path, const char* line)
     return;
   }
  
-  if (!file.println(line))
+  if (!file.println(line) || !file.print('\n'))
   {
      Serial.println("File write failed");
   }
@@ -171,11 +171,11 @@ void delete_uuid(const JSON& input, JSON& output)
     const char* image = id.second->get_image();
     const char* timestamp = id.second->get_timestamp();
     
-    char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
+    char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 5];
 
     sprintf(
       line_buffer, 
-      "%s %s %s %s ", 
+      "%s %s %s %s", 
       name,
       image,
       uuid,
@@ -195,11 +195,11 @@ void register_id(const JSON& input, JSON& output)
 
   ids[uuid] = new Identity(name, image, uuid, timestamp);
 
-  char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
+  char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 5];
 
   sprintf(
     line_buffer, 
-    "%s %s %s %s ", 
+    "%s %s %s %s", 
     name,
     image,
     uuid,
@@ -282,7 +282,7 @@ void read_RFID()
 
     char line_buffer[uuid.size() + 32];
 
-    sprintf(line_buffer, "%s %s %s ", uuid.c_str(), timestamp, is_matching ? "true" : "false");
+    sprintf(line_buffer, "%s %s %s", uuid.c_str(), timestamp, is_matching ? "true" : "false");
 
     appendToFile(HISTORY_FILE, line_buffer);
 
@@ -294,8 +294,6 @@ void read_RFID()
       
       digitalWrite(RELAY_PIN, is_on ? HIGH : LOW);
       is_on = !is_on;
-
-      delay(5000);
     } 
     else 
     {
@@ -308,6 +306,8 @@ void read_RFID()
       noTone(BUZZER_PIN);
     }
   }
+
+  delay(5000);
 }
 
 void serial_communication() 
