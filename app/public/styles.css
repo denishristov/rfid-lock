@@ -44,8 +44,8 @@ p {
 .uuid {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
-  cursor: pointer;
+  margin-bottom: 32px;
+  margin-right: 24px;
 }
 
 section {
@@ -80,7 +80,7 @@ button + button {
 }
 
 section > i {
-  margin: 0 16px;
+  margin: 16px;
 }
 
 form {
