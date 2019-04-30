@@ -4,7 +4,7 @@ import { useController, sendToController } from './util'
 import { IAllData, IScan, IIdentity } from './interfaces'
 import IDModal from './IDModal'
 import { format } from 'timeago.js'
-import DeleteModal from './DeleteModal';
+import DeleteModal from './DeleteModal'
 
 function App() {
 	const [history, setHistory] = useState<IScan[]>([])
@@ -63,7 +63,7 @@ function App() {
 		}
 	})
 
-	console.log(history.map(x => new Date(x.timestamp)))
+	console.log(history, ids)
 
 	return (
 		<Fragment>
@@ -71,9 +71,9 @@ function App() {
 				<p className="title">History</p>
 				<div className='entries'>
 					{history.map(scan => (
-						<div className='col' key={scan.timestamp}>
+						<div className='col' key={+scan.timestamp}>
 							<p className={`nes-text is-${scan.isMatching ? 'success' : 'error'}`}>{scan.uuid}</p>
-							<p className='nes-text is-disabled'>{format(new Date(scan.timestamp))}</p>
+							<p className='nes-text is-disabled'>{format(scan.timestamp)}</p>
 						</div>
 					))}
 				</div>
@@ -87,7 +87,7 @@ function App() {
 							<span>
 								<p className='nes-text'>{name}</p>
 								<p className='nes-text is-disabled'>{uuid}</p>
-								<p className='nes-text is-disabled'>{format(new Date(timestamp))}</p>
+								<p className='nes-text is-disabled'>{format(timestamp)}</p>
 							</span>
 						</div>
 					))}

@@ -34,10 +34,8 @@ function createWindow() {
 	mainWindow.loadFile(join(__dirname, '../public/index.html'))
 
 	mainWindow.webContents.on('did-finish-load', () => {
-		['scan'].forEach((type) => {
-			api.on(type, (data) => {
-				mainWindow.webContents.send(type, data)
-			})
+		api.onScan(scan => {
+			mainWindow.webContents.send('scan', scan)
 		})
 	})
 

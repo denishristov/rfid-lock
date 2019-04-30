@@ -1,9 +1,10 @@
 #define BUZZER_PIN D8
+#define RELAY_PIN D4
 #define SS_PIN D2
 #define RST_PIN D1
 
-#define HISTORY_FILE "history.json"
-#define IDS_FILE "ids.json"
+#define HISTORY_FILE "/history.txt"
+#define IDS_FILE "/ids.txt"
 
 #define ARDUINOJSON_USE_DOUBLE 1
 
@@ -13,58 +14,72 @@
 #include <TaskScheduler.h>
 #include <ArduinoJson.h>
 #include <FS.h>
+#include <cstdlib>
 
 typedef DynamicJsonDocument JSON;
 typedef void(*handler)(const JSON&, JSON&);
 
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+std::vector<std::string> split(const char* s, char delim) 
+{
+  std::vector<std::string> result;
+  std::stringstream ss(s);
+  std::string item;
 
-double sync = 0;
+  while (getline(ss, item, delim)) 
+  {
+    result.push_back(item);
+  }
 
-void saveFile(const char* path, const JSON& json)
-{          
-  File file = SPIFFS.open(path, "w");
-//  json.printTo(historyFile);
-  serializeJson(json, file);
-  
-  file.close();  
+  return result;
 }
 
-void loadFile(const char* path)
-{
-  File file = SPIFFS.open(path, "r");
+void appendToFile(const char* path, const char* line)
+{          
+  File file = SPIFFS.open(path, "w");
 
   if (!file)
   {
-    Serial.println(String(path) + " does not exist");
-  } 
-  else
-  {
-    size_t size = file.size();
-    
-    if (size) 
-    {
-      char* buffer = new char(size);
-      // free up this bitch
-
-      file.readBytes(buffer, size);
-      Serial.println(buffer);
-//      if (!root.success()) {
-//        Serial.println(String(path) + " is not valid JSON file");
-//      } else {
-//        root.printTo(Serial);  
-//      }
-    } 
-    else 
-    {
-      Serial.println(String(path) + " is empty");
-    }
-
-    file.close();
+    Serial.println("There was an error opening the file for writing");
+    return;
   }
+ 
+  if (!file.println(line))
+  {
+     Serial.println("File write failed");
+  }
+ 
+  file.close();  
 }
 
-class Identity {
+class Scan 
+{
+  const char* _uuid;
+  const char* _timestamp;
+  const char* _is_matching;
+
+public:
+
+  Scan(const char* uuid, const char* timestamp, const char* is_matching): 
+    _uuid(uuid), _timestamp(timestamp), _is_matching(is_matching) {}
+
+  const char* get_uuid() 
+  {
+    return _uuid;
+  }
+
+  const char* get_timestamp() 
+  {
+    return _timestamp;
+  }
+
+  const char* get_is_matching() 
+  {
+    return _is_matching;
+  }
+};
+
+class Identity 
+{
   const char* _name;
   const char* _image;
   const char* _uuid;
@@ -75,39 +90,62 @@ public:
   Identity(const char* name, const char* image, const char* uuid, const char* timestamp): 
     _name(name), _image(image), _uuid(uuid), _timestamp(timestamp) {}
 
-  const char* get_name() {
+  ~Identity()
+  {
+    free((void*)_name);
+    free((void*)_image);
+    free((void*)_uuid);
+    free((void*)_timestamp);
+  }
+
+  const char* get_name() 
+  {
     return _name;
   }
 
-  const char* get_image() {   
+  const char* get_image() 
+  {   
     return _image;
   }
 
-  const char* get_uuid() {
+  const char* get_uuid() 
+  {
     return _uuid;
   }
 
-  const char* get_timestamp() {
+  const char* get_timestamp() 
+  {
     return _timestamp;
   }
 };
 
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+double sync = 0;
+
 std::unordered_map<std::string, Identity*> ids;
 std::unordered_map<std::string, handler> operations;
-std::deque<std::string> history;
+std::deque<Scan*> history;
 
 bool is_register_mode = false;
+bool is_on = false;
 
 void sync_time(const JSON& input, JSON& output)
 {
-  double milliseconds = input["milliseconds"];
+  long long milliseconds = input["milliseconds"];
 
   sync = milliseconds - millis();
 }
 
-double get_milliseconds()
+const char* get_milliseconds()
 {
-  return sync + millis();
+  long long milliseconds = sync + millis();
+
+  char* buffer = new char[32];
+
+  sprintf(buffer, "%lld", milliseconds);
+  
+  return buffer;
 }
 
 void toggle_register_mode(const JSON& input, JSON& output)
@@ -120,7 +158,32 @@ void delete_uuid(const JSON& input, JSON& output)
   const char* uuid = input["uuid"];
 
   const auto& it = ids.find(uuid);
+  delete it->second;
+  
   ids.erase(it);
+
+  SPIFFS.remove(IDS_FILE);
+
+  for (const auto& id: ids)
+  {
+    const char* uuid = id.second->get_uuid();
+    const char* name = id.second->get_name();
+    const char* image = id.second->get_image();
+    const char* timestamp = id.second->get_timestamp();
+    
+    char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
+
+    sprintf(
+      line_buffer, 
+      "%s %s %s %s ", 
+      name,
+      image,
+      uuid,
+      timestamp
+    );
+
+    appendToFile(IDS_FILE, line_buffer);
+  }
 }
 
 void register_id(const JSON& input, JSON& output)
@@ -131,9 +194,23 @@ void register_id(const JSON& input, JSON& output)
   const char* timestamp = strdup(input["timestamp"]);
 
   ids[uuid] = new Identity(name, image, uuid, timestamp);
+
+  char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
+
+  sprintf(
+    line_buffer, 
+    "%s %s %s %s ", 
+    name,
+    image,
+    uuid,
+    timestamp
+  );
+
+  appendToFile(IDS_FILE, line_buffer);
 }
 
-void read_RFID() {
+void read_RFID() 
+{
   if (!mfrc522.PICC_IsNewCardPresent()) 
   {
     return;
@@ -153,14 +230,14 @@ void read_RFID() {
     uuid_buffer.append(String(mfrc522.uid.uidByte[i], HEX).c_str());
   }
 
-  const char* uuid = uuid_buffer.substr(1).c_str();
+  std::string uuid = uuid_buffer.substr(1);
 
   if (is_register_mode) 
   {
     is_register_mode = false;
     JSON output(256);
 
-    output["uuid"] = uuid;
+    output["uuid"] = uuid.c_str();
     output["type"] = "scan";
 
     serializeJson(output, Serial);
@@ -180,31 +257,45 @@ void read_RFID() {
   }
   else
   {
-    bool is_matching = ids.find(uuid_buffer.substr(1)) != ids.end();
+    bool is_matching = ids.find(uuid) != ids.end();
 
     JSON output(256);
 
-    output["uuid"] = uuid;
-    output["timestamp"] = get_milliseconds();
+    const char* timestamp = get_milliseconds();
+
+    output["uuid"] = uuid.c_str();
+    output["timestamp"] = timestamp;
     output["type"] = "scan";
-    output["isMatching"] = is_matching;
+    output["isMatching"] = is_matching ? "true" : "false";
 
     char output_buffer[256];
     serializeJson(output, output_buffer);
 
-    if (history.size() > 255)
-    {
-      history.pop_back();
-    }
+// this should be handled
+//    if (history.size() > 255)
+//    {
+//      history.pop_back();
+//    }
 
-    history.push_front(output_buffer);
+    history.push_front(new Scan(strdup(uuid.c_str()), strdup(timestamp),  is_matching ? "true" : "false"));
     Serial.println(output_buffer);
+
+    char line_buffer[uuid.size() + 32];
+
+    sprintf(line_buffer, "%s %s %s ", uuid.c_str(), timestamp, is_matching ? "true" : "false");
+
+    appendToFile(HISTORY_FILE, line_buffer);
 
     if (is_matching)
     {
       tone(BUZZER_PIN, 4000);
       delay(300);
       noTone(BUZZER_PIN);
+      
+      digitalWrite(RELAY_PIN, is_on ? HIGH : LOW);
+      is_on = !is_on;
+
+      delay(5000);
     } 
     else 
     {
@@ -219,7 +310,8 @@ void read_RFID() {
   }
 }
 
-void serial_communication() {
+void serial_communication() 
+{
   if (Serial.available())
   {
     String payload = Serial.readString().c_str();
@@ -232,7 +324,7 @@ void serial_communication() {
       return;
     }
 
-    JSON output(256);
+    JSON output(10000);
 
     const char* type = input["type"];
     
@@ -244,25 +336,86 @@ void serial_communication() {
   }
 }
 
-void get_all(const JSON& input, JSON& output)
+void get_data(const JSON& input, JSON& output)
 {
   const JsonArray& data_ids = output.createNestedArray("ids");
       
   for (const auto& id: ids) 
   {
-    const JsonObject& indentity = data_ids.createNestedObject();
+    const JsonObject& json = data_ids.createNestedObject();
     
-    indentity["uuid"] = id.second->get_uuid();
-    indentity["name"] = id.second->get_name();
-    indentity["image"] = id.second->get_image();
-    indentity["timestamp"] = id.second->get_timestamp();
+    json["uuid"] = id.second->get_uuid();
+    json["name"] = id.second->get_name();
+    json["image"] = id.second->get_image();
+    json["timestamp"] = id.second->get_timestamp();
   }
 
   const JsonArray& data_history = output.createNestedArray("history");
       
   for (const auto& scan: history) 
   {
-    data_history.add(scan.c_str());
+    const JsonObject& json = data_history.createNestedObject();
+    
+    json["uuid"] = scan->get_uuid();
+    json["timestamp"] = scan->get_timestamp();
+    json["isMatching"] = scan->get_is_matching();
+  }
+}
+
+void parseHistory() 
+{
+  File file = SPIFFS.open(HISTORY_FILE, "r");
+
+  if (!file)
+  {
+    Serial.println(String(HISTORY_FILE) + " does not exist");
+    return;
+  }
+
+  char buffer[512];
+  
+  while (file.available()) 
+  {
+    int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
+    buffer[l] = 0;
+
+    Serial.println(String(buffer));
+
+    std::vector<std::string> data = split(buffer, ' ');
+    
+    const char* uuid = strdup(data[0].c_str());
+    const char* timestamp = strdup(data[1].c_str());
+    const char* is_matching = strdup(data[2].c_str());
+
+    history.push_front(new Scan(uuid, timestamp, is_matching));
+  }
+}
+
+void parseIds() 
+{
+  File file = SPIFFS.open(IDS_FILE, "r");
+
+  if (!file)
+  {
+    Serial.println(String(IDS_FILE) + " does not exist");
+    return;
+  }
+
+  char buffer[512];
+  
+  while (file.available()) 
+  {
+    int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
+    buffer[l] = 0;
+
+    std::vector<std::string> data = split(buffer, ' ');
+
+    const char* name = strdup(data[0].c_str());
+    const char* image = strdup(data[1].c_str());
+    const char* uuid = strdup(data[2].c_str());
+    const char* timestamp = strdup(data[3].c_str());
+
+    ids[uuid] = new Identity(name, image, uuid, timestamp);
   }
 }
  
@@ -274,15 +427,19 @@ Task communication_task(100, TASK_FOREVER, &serial_communication);
 void setup() 
 {
   Serial.begin(115200);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, HIGH);
+
   SPIFFS.begin();
+//  SPIFFS.format();
   SPI.begin();
+  
   mfrc522.PCD_Init();
   
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // ids.insert("e4-10-6a-1f");
-
-  operations["get"] = get_all;
+  operations["get"] = get_data;
   operations["toggleRegister"] = toggle_register_mode;
   operations["register"] = register_id;
   operations["deleteUuid"] = delete_uuid;
@@ -295,6 +452,9 @@ void setup()
 
   RFID_task.enable();
   communication_task.enable();
+
+  parseHistory();
+  parseIds();
 }
 
 void loop() 

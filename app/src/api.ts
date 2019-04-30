@@ -1,6 +1,6 @@
 import SerialPort from 'serialport'
 import { EventEmitter } from 'events'
-import { IDataResponse, IAllData, IScan, IIdentity } from './interfaces'
+import { IDataResponse, IAllData, IScan, IIdentity, IScanResponse, IIdentityResponse } from './interfaces';
 
 const Readline = require('@serialport/parser-readline')
 
@@ -10,6 +10,21 @@ async function findPortPath() {
   const ports = await SerialPort.list()
 
   return ports.find(port => port.comName.includes('usbserial')).comName
+}
+
+function toScan({ timestamp, isMatching, ...rest }: IScanResponse) {
+  return {
+    ...rest,
+    timestamp: new Date(Number(timestamp)),
+    isMatching: isMatching === 'true',
+  }
+}
+
+function toId({ timestamp, ...rest }: IIdentityResponse) {
+  return {
+    timestamp: new Date(timestamp),
+    ...rest,
+  }
 }
 
 export default class API extends EventEmitter {
@@ -35,11 +50,11 @@ export default class API extends EventEmitter {
   }
 
   async getAll(): Promise<IAllData> {
-    const { ids, history } = await this.fetch<IDataResponse>('get')
-
-    return { 
-      ids,
-      history: history.map(scan => JSON.parse(scan))
+    const { history, ids } = await this.fetch<IDataResponse>('get');
+    console.log(history, ids)
+    return {
+      history: history.map(toScan),
+      ids: ids.map(toId),
     }
   }
 
@@ -57,6 +72,13 @@ export default class API extends EventEmitter {
 
   syncTime() {
     return this.fetch('syncTime', { milliseconds: +new Date() })
+  }
+
+  onScan(cb: (scan: IScan) => void) {
+    this.on('scan', (scan: IScanResponse) => {
+      console.log(scan)
+      cb(toScan(scan))
+    })
   }
 
   private fetch<T>(type: string, data?: {}): Promise<T> {
