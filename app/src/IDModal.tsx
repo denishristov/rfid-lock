@@ -28,7 +28,7 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
       name,
       image,
       uuid,
-      timestamp: new Date().toISOString()
+      timestamp: new Date()
     })
   }
 

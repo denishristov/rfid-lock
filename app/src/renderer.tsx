@@ -63,8 +63,6 @@ function App() {
 		}
 	})
 
-	console.log(history, ids)
-
 	return (
 		<Fragment>
 			<div className="nes-container with-title is-rounded">

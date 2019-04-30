@@ -20,7 +20,7 @@ function toScan({ timestamp, isMatching, ...rest }: IScanResponse) {
   }
 }
 
-function toId({ timestamp, ...rest }: IIdentityResponse) {
+export function toId({ timestamp, ...rest }: IIdentityResponse) {
   return {
     timestamp: new Date(timestamp),
     ...rest,
@@ -51,7 +51,6 @@ export default class API extends EventEmitter {
 
   async getAll(): Promise<IAllData> {
     const { history, ids } = await this.fetch<IDataResponse>('get');
-    console.log(history, ids)
     return {
       history: history.map(toScan),
       ids: ids.map(toId),
@@ -62,8 +61,8 @@ export default class API extends EventEmitter {
     return this.fetch('toggleRegister')
   }
 
-  register(id: IIdentity) {
-    return this.fetch('register', id)
+  register({ timestamp, ...rest }: IIdentity) {
+    return this.fetch('register', { timestamp: timestamp.toISOString(), ...rest })
   }
 
   deleteUuid(uuid: string) {
@@ -76,7 +75,6 @@ export default class API extends EventEmitter {
 
   onScan(cb: (scan: IScan) => void) {
     this.on('scan', (scan: IScanResponse) => {
-      console.log(scan)
       cb(toScan(scan))
     })
   }
