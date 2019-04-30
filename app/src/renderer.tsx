@@ -1,10 +1,11 @@
 import { useState, createElement, Fragment, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import { useController, sendToController } from './util'
-import { IAllData, IScan, IIdentity } from './interfaces'
+import { IAllData, IScan, IIdentity, IIdentityResponse } from './interfaces'
 import IDModal from './IDModal'
 import { format } from 'timeago.js'
 import DeleteModal from './DeleteModal'
+import { toId } from './api'
 
 function App() {
 	const [history, setHistory] = useState<IScan[]>([])
@@ -16,9 +17,9 @@ function App() {
 	const ref = useRef<HTMLDialogElement>()
 	const deleteModalRef = useRef<HTMLDialogElement>()
 
-	function register(id: IIdentity) {
+	function register(id: IIdentityResponse) {
 		sendToController('register', id)
-		setIds(ids => [id, ...ids])
+		setIds(ids => [toId(id), ...ids])
 		setModalKey(key => key + 1)
 		setUuid('')
 	}

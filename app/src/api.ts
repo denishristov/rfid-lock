@@ -1,6 +1,6 @@
 import SerialPort from 'serialport'
 import { EventEmitter } from 'events'
-import { IDataResponse, IAllData, IScan, IIdentity, IScanResponse, IIdentityResponse } from './interfaces';
+import { IDataResponse, IAllData, IScan, IIdentity, IScanResponse, IIdentityResponse } from './interfaces'
 
 const Readline = require('@serialport/parser-readline')
 
@@ -50,7 +50,7 @@ export default class API extends EventEmitter {
   }
 
   async getAll(): Promise<IAllData> {
-    const { history, ids } = await this.fetch<IDataResponse>('get');
+    const { history, ids } = await this.fetch<IDataResponse>('get')
     return {
       history: history.map(toScan),
       ids: ids.map(toId),
@@ -61,8 +61,8 @@ export default class API extends EventEmitter {
     return this.fetch('toggleRegister')
   }
 
-  register({ timestamp, ...rest }: IIdentity) {
-    return this.fetch('register', { timestamp: timestamp.toISOString(), ...rest })
+  register(id: IIdentityResponse) {
+    return this.fetch('register', id)
   }
 
   deleteUuid(uuid: string) {

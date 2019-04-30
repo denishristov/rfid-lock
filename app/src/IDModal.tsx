@@ -1,9 +1,9 @@
 import { createElement, forwardRef, useState } from 'react'
-import { IIdentity } from './interfaces'
+import { IIdentityResponse } from './interfaces'
 
 interface IProps {
   uuid: string
-  create(id: IIdentity): void
+  create(id: IIdentityResponse): void
   close(): void
 }
 
@@ -21,6 +21,8 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
   const [name, setName] = useState('')
   const [image, setImage] = useState(icons[0])
 
+  const containsSpace = name.includes(' ')
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.stopPropagation()
 
@@ -28,7 +30,7 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
       name,
       image,
       uuid,
-      timestamp: new Date()
+      timestamp: new Date().toISOString(),
     })
   }
 
@@ -37,7 +39,7 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
       <form method="dialog" onSubmit={handleSubmit}>
         <p className="title">Add new identity</p>
         <p>
-          UUID: <span className={`nes-text is-${uuid ? 'success' : 'warning'}`}>
+          UUID: <span className={`nes-text is-${uuid ? 'success' : 'error'}`}>
             {uuid || 'Approximate your card to the reader'}
           </span>
         </p>
@@ -45,7 +47,7 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
           <label>Name</label>
           <input 
             type="text" 
-            className={`nes-input is-${name ? 'success' : 'warning'}`} 
+            className={`nes-input is-${(!containsSpace && name) ? 'success' : 'error'}`} 
             value={name} 
             onChange={e => setName(e.target.value)} 
           />
@@ -64,8 +66,8 @@ function IDModal({ uuid, create, close }: IProps, ref: React.Ref<HTMLDialogEleme
           <button type='button' className="nes-btn" onClick={close}>Cancel</button>
           <button 
             type="submit" 
-            disabled={!uuid} 
-            className={`nes-btn is-${uuid ? 'success' : 'disabled'}`}
+            disabled={containsSpace || !uuid} 
+            className={`nes-btn is-${(!containsSpace && uuid) ? 'success' : 'disabled'}`}
           >
             Confirm
           </button>

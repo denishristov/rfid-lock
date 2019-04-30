@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import API from './api'
-import { IIdentity } from './interfaces'
+import { IIdentity, IIdentityResponse } from './interfaces'
 
 let mainWindow: BrowserWindow
 
@@ -16,7 +16,7 @@ ipcMain
 		const data = await api.toggleRegister()
 		event.sender.send('toggleRegister', data)
 	})
-	.on('register', (_: void, id: IIdentity) => {
+	.on('register', (_: void, id: IIdentityResponse) => {
 		api.register(id)
 	})
 	.on('deleteUuid', (_: void, uuid: string) => {
