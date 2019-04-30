@@ -43,7 +43,7 @@ void appendToFile(const char* path, const char* line)
     return;
   }
  
-  if (!file.println(line) || !file.print('\n'))
+  if (!file.println(line))
   {
      Serial.println("File write failed");
   }
@@ -171,11 +171,11 @@ void delete_uuid(const JSON& input, JSON& output)
     const char* image = id.second->get_image();
     const char* timestamp = id.second->get_timestamp();
     
-    char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 5];
+    char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
 
     sprintf(
       line_buffer, 
-      "%s %s %s %s", 
+      "%s %s %s %s ", 
       name,
       image,
       uuid,
@@ -195,11 +195,11 @@ void register_id(const JSON& input, JSON& output)
 
   ids[uuid] = new Identity(name, image, uuid, timestamp);
 
-  char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 5];
+  char line_buffer[strlen(name) + strlen(image) + strlen(uuid) + strlen(timestamp) + 6];
 
   sprintf(
     line_buffer, 
-    "%s %s %s %s", 
+    "%s %s %s %s ", 
     name,
     image,
     uuid,
@@ -282,7 +282,7 @@ void read_RFID()
 
     char line_buffer[uuid.size() + 32];
 
-    sprintf(line_buffer, "%s %s %s", uuid.c_str(), timestamp, is_matching ? "true" : "false");
+    sprintf(line_buffer, "%s %s %s ", uuid.c_str(), timestamp, is_matching ? "true" : "false");
 
     appendToFile(HISTORY_FILE, line_buffer);
 
